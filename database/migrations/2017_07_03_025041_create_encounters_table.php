@@ -18,6 +18,7 @@ class CreateEncountersTable extends Migration
             $table->integer('user_id')->unsigned();
             $table->string('title', 128);
             $table->text('description');
+            $table->tinyInteger('non_combat')->unsinged();
             $table->tinyInteger('cr')->unsigned();
             $table->timestamps();
         });

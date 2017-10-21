@@ -17,7 +17,7 @@ class CreateEncounterCommentsTable extends Migration
             $table->increments('id');
             $table->integer('encounter_id')->unsigned();
             $table->integer('user_id')->unsigned();
-            $table->text('comment');
+            $table->string('comment', 4096);
             $table->timestamps();
         });
     }

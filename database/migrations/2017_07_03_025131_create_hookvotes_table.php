@@ -14,7 +14,8 @@ class CreateHookVotesTable extends Migration
     public function up()
     {
         Schema::create('hook_votes', function (Blueprint $table) {
-            $table->increments('id');            
+            $table->increments('id');
+            $table->integer('hook_id')->unsigned();      
             $table->integer('user_id')->unsigned();
             $table->tinyInteger('vote')->unsigned();
             $table->timestamps();

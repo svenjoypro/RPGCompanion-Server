@@ -17,8 +17,7 @@ class CreateHookCommentsTable extends Migration
             $table->increments('id');
             $table->integer('hook_id')->unsigned();
             $table->integer('user_id')->unsigned();
-            $table->integer('votes')->default(1);
-            $table->text('comment');
+            $table->string('comment', 4096);
             $table->timestamps();
         });
     }
