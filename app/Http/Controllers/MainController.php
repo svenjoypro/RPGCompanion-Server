@@ -11,14 +11,16 @@ use DB;
 class MainController extends Controller {
 
 	public function getHooks(Request $request) {
-		/*
-		$hooks = DB::table('hooks')
-			->join('users', 'hooks.user_id', '=', 'users.id')
-			->select('hooks.id', 'hooks.title', 'hooks.votes', 'hooks.created_at', 'hooks.user_id', 'users.username')
-			->take(20)->get();
-		*/
-		$hooks = DB::table('hooks')->select('id', 'title', 'user_id', 'description', 'votes', 'created_at')->take(10)->inRandomOrder()->get();
-		
+		$hooks = DB::table('hooks')->select('id', 'title', 'user_id', 'description', 'created_at')->take(10)->inRandomOrder()->get();
+
+		foreach ($hooks as $hook) {
+			$hook->upvotes = DB::table('hook_votes')->where('hook_id', $hook->id)->where('vote', '1')->count();
+			$hook->downvotes = DB::table('hook_votes')->where('hook_id', $hook->id)->where('vote', '0')->count();
+			
+			if ($hook->voted = DB::table('hook_votes')->select('vote')->where('hook_id', $hook->id)->where('user_id', '0')->first()) {}
+			else { $hook->voted = -1; }
+		}
+
 		return response()->json($hooks);
 	}
 
