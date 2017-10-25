@@ -10,6 +10,11 @@ use DB;
 
 class MainController extends Controller {
 
+	public function getWebalert(Request $request) {
+		$o['msg']="Update: 10/24/17 \nNPCs are now editable, click any attribute to be able to edit it, however it may create compatibility issues with any previous NPCs you have saved. You may have to delete your saved NPCs. Sorry for any inconveniences.";
+		return response()->json($o);
+	}
+
 	public function getHooks(Request $request) {
 		$hooks = DB::table('hooks')->select('id', 'title', 'user_id', 'description', 'created_at')->take(10)->inRandomOrder()->get();
 
