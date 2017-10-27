@@ -48,4 +48,37 @@ class MainController extends Controller {
 		return response()->json($output);
 	}
 
+	public function getRiddles(Request $request) {
+		$riddles = DB::table('riddles')->select('id', 'riddle', 'user_id', 'answer', 'created_at')->take(5)->inRandomOrder()->get();
+
+		foreach ($riddles as $riddle) {
+			$riddle->upvotes = DB::table('riddle_votes')->where('riddle_id', $riddle->id)->where('vote', '1')->count();
+			$riddle->downvotes = DB::table('riddle_votes')->where('riddle_id', $riddle->id)->where('vote', '0')->count();
+			
+			if ($riddle->voted = DB::table('riddle_votes')->select('vote')->where('riddle_id', $riddle->id)->where('user_id', '0')->first()) {}
+			else { $riddle->voted = -1; }
+		}
+
+		return response()->json($riddles);
+	}
+
+	public function getRiddleDetails(Request $request, $id) {
+		$riddle_id = $id;
+		$riddle = DB::table('riddle')
+		->join('users', 'riddles.user_id', '=', 'users.id')
+			->select('riddles.*', 'users.username')
+			->first();
+
+		$comments = DB::table('riddle_comments')
+			->join('users', 'riddle_comments.user_id', '=', 'users.id')
+			->select('riddle_comments.*', 'users.username')
+			->where('riddle_comments.riddle_id', $riddle_id)
+			->take(20)->get();
+
+		$output['riddle']=$riddle;
+		$output['comments']=$comments;
+		
+		return response()->json($output);
+	}
+
 }

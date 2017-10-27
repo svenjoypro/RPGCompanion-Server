@@ -18,6 +18,9 @@ Route::get('webalert', 'MainController@getWebalert');
 Route::get('hooks', 'MainController@getHooks');
 Route::get('hooks/{id}', 'MainController@getHookDetails');
 
+Route::get('riddles', 'MainController@getRiddles');
+Route::get('riddles/{id}', 'MainController@getRiddleDetails');
+
 Route::middleware('auth:api')->get('/user', function (Request $request) {
 	return $request->user();
 });

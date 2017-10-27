@@ -15,6 +15,7 @@ class CreateRiddlevotesTable extends Migration
     {
         Schema::create('riddle_votes', function (Blueprint $table) {
             $table->increments('id');
+            $table->integer('riddle_id')->unsigned();
             $table->integer('user_id')->unsigned();
             $table->tinyInteger('vote')->unsigned();
             $table->timestamps();
