@@ -15,6 +15,7 @@ class CreatePuzzleVotesTable extends Migration
     {
         Schema::create('puzzle_votes', function (Blueprint $table) {
             $table->increments('id');
+            $table->integer('puzzle_id')->unsigned();
             $table->integer('user_id')->unsigned();
             $table->tinyInteger('vote')->unsigned();
             $table->timestamps();
