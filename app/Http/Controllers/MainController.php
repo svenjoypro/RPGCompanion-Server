@@ -64,7 +64,7 @@ class MainController extends Controller {
 
 	public function getRiddleDetails(Request $request, $id) {
 		$riddle_id = $id;
-		$riddle = DB::table('riddle')
+		$riddle = DB::table('riddles')
 		->join('users', 'riddles.user_id', '=', 'users.id')
 			->select('riddles.*', 'users.username')
 			->first();
