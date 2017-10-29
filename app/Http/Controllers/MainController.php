@@ -11,7 +11,7 @@ use DB;
 class MainController extends Controller {
 
 	public function getWebalert(Request $request) {
-		$o['msg']="Update: 10/24/17 \nNPCs are now editable, click any attribute to be able to edit it, however it may create compatibility issues with any previous NPCs you have saved. You may have to delete your saved NPCs. Sorry for any inconveniences.";
+		$o['msg']="Update: 10/28/17 \nRiddles now implemented\nI currently only have 226 riddles (some are better than others), and when you click the \"Load More\" button you will eventually get repeats (just like with the Plot Hooks). I'm still debating the best way to prevent duplicates while still retrieving random results - I'm open to suggestions.";
 		return response()->json($o);
 	}
 
