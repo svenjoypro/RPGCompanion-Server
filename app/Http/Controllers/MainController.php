@@ -11,7 +11,7 @@ use DB;
 class MainController extends Controller {
 
 	public function getWebalert(Request $request) {
-		$o['msg']="Update: 10/28/17 \nRiddles now implemented\nI currently only have 226 riddles (some are better than others), and when you click the \"Load More\" button you will eventually get repeats (just like with the Plot Hooks). I'm still debating the best way to prevent duplicates while still retrieving random results - I'm open to suggestions.";
+		$o['msg']="Update: 10/30/17 Happy Halloween! \nRiddles Improved - You shouldn't get any repeats anymore (until you leave the screen then come back). Also it shouldn't crash anymore when you click on a riddle (though not much happens when you click on one yet)";
 		return response()->json($o);
 	}
 
@@ -49,7 +49,20 @@ class MainController extends Controller {
 	}
 
 	public function getRiddles(Request $request) {
-		$riddles = DB::table('riddles')->select('id', 'riddle', 'user_id', 'answer', 'created_at')->take(5)->inRandomOrder()->get();
+		if ($request->has('ids')) {
+			$riddles = DB::table('riddles')->select('id', 'riddle', 'user_id', 'answer', 'created_at')->whereIn('id', $request->input('ids'))->get();
+		}
+		else if ($request->has('random')) {
+			$qty=5;
+			if ($request->has('qty')) {
+				$qty = intval($request->input('qty'));
+			}
+			$output['total'] = DB::table('riddles')->count();
+			$riddles = DB::table('riddles')->select('id', 'riddle', 'user_id', 'answer', 'created_at')->take($qty)->inRandomOrder()->get();
+		}
+		else if ($request->has('sort')) {
+			//todo
+		}
 
 		foreach ($riddles as $riddle) {
 			$riddle->upvotes = DB::table('riddle_votes')->where('riddle_id', $riddle->id)->where('vote', '1')->count();
@@ -58,8 +71,8 @@ class MainController extends Controller {
 			if ($riddle->voted = DB::table('riddle_votes')->select('vote')->where('riddle_id', $riddle->id)->where('user_id', '0')->first()) {}
 			else { $riddle->voted = -1; }
 		}
-
-		return response()->json($riddles);
+		$output['riddles']=$riddles;
+		return response()->json($output);
 	}
 
 	public function getRiddleDetails(Request $request, $id) {
@@ -76,6 +89,40 @@ class MainController extends Controller {
 			->take(20)->get();
 
 		$output['riddle']=$riddle;
+		$output['comments']=$comments;
+		
+		return response()->json($output);
+	}
+
+
+	public function getPuzzles(Request $request) {
+		$puzzles = DB::table('puzzles')->select('id', 'puzzle', 'user_id', 'answer', 'created_at')->take(5)->inRandomOrder()->get();
+
+		foreach ($puzzles as $puzzle) {
+			$puzzle->upvotes = DB::table('puzzle_votes')->where('puzzle_id', $puzzle->id)->where('vote', '1')->count();
+			$puzzle->downvotes = DB::table('puzzle_votes')->where('puzzle_id', $puzzle->id)->where('vote', '0')->count();
+			
+			if ($puzzle->voted = DB::table('puzzle_votes')->select('vote')->where('puzzle_id', $puzzle->id)->where('user_id', '0')->first()) {}
+			else { $puzzle->voted = -1; }
+		}
+
+		return response()->json($puzzles);
+	}
+
+	public function getPuzzleDetails(Request $request, $id) {
+		$puzzle_id = $id;
+		$puzzle = DB::table('puzzles')
+		->join('users', 'puzzles.user_id', '=', 'users.id')
+			->select('puzzles.*', 'users.username')
+			->first();
+
+		$comments = DB::table('puzzle_comments')
+			->join('users', 'puzzle_comments.user_id', '=', 'users.id')
+			->select('puzzle_comments.*', 'users.username')
+			->where('puzzle_comments.puzzle_id', $puzzle_id)
+			->take(20)->get();
+
+		$output['puzzle']=$puzzle;
 		$output['comments']=$comments;
 		
 		return response()->json($output);
