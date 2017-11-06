@@ -27,6 +27,7 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 
 Route::post('login', 'JWTAuthController@login');
 Route::post('register', 'JWTAuthController@register');
+Route::get('confirm-email', 'JWTAuthController@confirm');
 
 Route::group(['middleware' => 'jwt.auth'], function () {
 	Route::get('admin/info', 'AdminController@accountInfo');

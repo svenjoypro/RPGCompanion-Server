@@ -10,53 +10,123 @@ use JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use App\User;
 use Hash;
+use Mail;
+
+require_once(app_path().'/constants.php');
 
 class JwtAuthController extends Controller {
 
-    public function register(Request $request) {
-      // limit userData to only the essential columns
-      $userData = $request->only(User::$registrationFields);
+	public function register(Request $request) {
+		// limit userData to only the essential columns
+		$userData = $request->only(User::$registrationFields);
 
-      // create validator with validation rules found in User
-      $validator = Validator::make($userData, User::$registrationValidationRules);
+		// create validator with validation rules found in User
+		$validator = Validator::make($userData, User::$registrationValidationRules);
 
-      // check inputs against validator
-      if($validator->fails()) {
-        return response()->json(['error'=>$validator->errors()->all()]);
-      }
+		// check inputs against validator
+		if($validator->fails()) {
+			return response()->json(['error'=>$validator->errors()->all()]);
+		}
 
-      // Hash the user's password
-      $userData['password'] = Hash::make($userData['password']);
+		// Hash the user's password
+		$userData['password'] = Hash::make($userData['password']);
 
-      // unguard and reguard are probably unecessary
-      // they remove the mass-assignment restriction of User::$fillable
-      // User::unguard();
-      $user = User::create($userData);
-      // User::reguard();
+		// Create random string for email confirmation
+        $userData['email_confirmation_code'] = str_random(EMAIL_CONFIRMATION_LENGTH);
 
-      // make sure a new entry was created in the db
-      if(!$user->id) {
-        return response()->json(['error'=>'Could not create user']);
-      }
+		// unguard and reguard are probably unecessary
+		// they remove the mass-assignment restriction of User::$fillable
+		// User::unguard();
+		$user = User::create($userData);
+		// User::reguard();
 
-      // Successfully created the user in db, move directly to login with all inputs
-      return $this->login($request);
-    }
+		// make sure a new entry was created in the db
+		if(!$user->id) {
+			return response()->json(['error'=>'Could not create user']);
+		}
 
-    public function login(Request $request) {
-        $credentials = $request->only('email', 'password');
+		$email=$request->input('email');
+		
+		try {
+			Mail::send('emails.verify', array('confirmation_code' => $userData['email_confirmation_code'], 'email' => $email), function($message) use($email) {
+				$message->to($email, $email)
+					->subject('Verify your email address');
+			});
+		}
+		catch(Exception $e) {
+			$user->delete();
+			return response()->json(['error'=>'could_not_create_user']);
+		}
 
-        try {
-            // verify the credentials and create a token for the user
-            if (! $token = JWTAuth::attempt($credentials)) {
-                return response()->json(['error'=>'invalid_credentials']);
-            }
-        } catch (JWTException $e) {
-            // something went wrong
-            return response()->json(['error'=>'could_not_create_token']);
-        }
+		return response()->json(['success'=>'Confirmation Email Sent']);
+	}
 
-        // if no errors are encountered we can return a JWT
-        return response()->json(['jwt'=>$token]);
-    }
+	public function login(Request $request) {
+		$credentials = $request->only('email', 'password');
+
+		/*
+		//TO USE USERNAME INSTEAD OF EMAIL
+        // Change email to username
+        $credentials = $request->only('username', 'password');
+        */
+
+		try {
+			// verify the credentials and create a token for the user
+			if (! $token = JWTAuth::attempt($credentials)) {
+				return response()->json(['error'=>'invalid_credentials']);
+			}
+		} catch (JWTException $e) {
+			// something went wrong
+			return response()->json(['error'=>'could_not_create_token']);
+		}
+		$user = Auth::User();
+		//make sure the user has verified their email
+		if ($user->account_status == ACCOUNT_STATUS_UNCONFIRMED) {
+			return response()->json(['error'=>'account_unconfirmed']);
+		}
+
+		// if no errors are encountered we can return a JWT
+		return response()->json(['jwt'=>$token]);
+	}
+
+	public function confirm(Request $request) {
+		if (!$request->has('c') || strlen($request->input('c')) != EMAIL_CONFIRMATION_LENGTH) {
+			if ($request->has('app')) {
+				return response()->json(['error'=>'invalid_code']);
+			}
+			else {
+				return "Invalid Code";
+			}
+		}
+
+		$user = User::whereEmailConfirmationCode($request->input('c'))->first();
+		if (!$user || $user->account_status != ACCOUNT_STATUS_UNCONFIRMED) {
+			if ($request->has('app')) {
+				return response()->json(['error'=>'invalid_code']);
+			}
+			else {
+				return "Invalid Code";
+			}
+		}
+
+		$user->account_status = ACCOUNT_STATUS_CONFIRMED;
+		$user->email_confirmation_code = null;
+
+		if (!$user->save()) {
+			if ($request->has('app')) {
+				return response()->json(['error'=>'db_error']);
+			}
+			else {
+				return "Database Error, please try again.";
+			}
+		}
+
+		if ($request->has('app')) {
+			$token = JWTAuth::fromUser($user);
+			return response()->json(['success'=>'account_verified', 'jwt'=>$token]);
+		}
+		else {
+			return "Account verified successfully. You may now log in.";
+		}
+	}
 }
