@@ -30,6 +30,7 @@ Route::post('register', 'JWTAuthController@register');
 Route::get('confirm-email', 'JWTAuthController@confirm');
 
 Route::group(['middleware' => 'jwt.auth'], function () {
+	Route::get('admin/check-token', 'JWTAuthController@checkToken');
 	Route::get('admin/info', 'AdminController@accountInfo');
 });
 

@@ -129,4 +129,8 @@ class JwtAuthController extends Controller {
 			return "Account verified successfully. You may now log in.";
 		}
 	}
+
+	public function checkToken(Request $request) {
+		return response()->json(['success'=>'valid_token']);
+	}
 }
