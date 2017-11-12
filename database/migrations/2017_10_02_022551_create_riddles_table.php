@@ -18,7 +18,7 @@ class CreateRiddlesTable extends Migration
             $table->integer('user_id')->unsigned();
             $table->string('riddle', 2048);
             $table->string('answer', 512);
-            $table->tinyInteger('difficulty')->unsigned();
+            $table->tinyInteger('difficulty')->unsigned()->default(0);
             $table->timestamps();
         });
     }

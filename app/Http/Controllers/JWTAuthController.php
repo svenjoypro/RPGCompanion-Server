@@ -25,7 +25,7 @@ class JwtAuthController extends Controller {
 
 		// check inputs against validator
 		if($validator->fails()) {
-			return response()->json(['error'=>$validator->errors()->all()]);
+			return response()->json(['error'=>$validator->errors()->all()], 400);
 		}
 
 		// Hash the user's password
@@ -42,7 +42,7 @@ class JwtAuthController extends Controller {
 
 		// make sure a new entry was created in the db
 		if(!$user->id) {
-			return response()->json(['error'=>'Could not create user']);
+			return response()->json(['error'=>'Could not create user'], 500);
 		}
 
 		$email=$request->input('email');
@@ -55,10 +55,38 @@ class JwtAuthController extends Controller {
 		}
 		catch(Exception $e) {
 			$user->delete();
-			return response()->json(['error'=>'could_not_create_user']);
+			return response()->json(['error'=>'could_not_create_user'], 500);
 		}
 
 		return response()->json(['success'=>'Confirmation Email Sent']);
+	}
+
+	public function resendEmail(Request $request) {
+		if (!$request->has('email')) {
+			return response()->json(['error'=>'missing_data'], 400);
+		}
+
+		$email = $request->input('email');
+
+		$user = User::where('email', $email)->first();
+		if (!$user) {
+			return response()->json(['error'=>'invalid_email']);
+		}
+		try {
+			if (is_null($user->email_confirmation_code) || strlen($user->email_confirmation_code) != EMAIL_CONFIRMATION_LENGTH) {
+				$user->email_confirmation_code = str_random(EMAIL_CONFIRMATION_LENGTH);
+				$user->save();
+			}
+			Mail::send('emails.verify', array('confirmation_code' => $user->email_confirmation_code, 'email' => $email), function($message) use($email) {
+				$message->to($email, $email)
+					->subject('Verify your email address');
+			});
+		}
+		catch(Exception $e) {
+			$user->delete();
+			return response()->json(['error'=>'could_not_create_user'], 500);
+		}
+		return response()->json(['success'=>'email_sent']);
 	}
 
 	public function login(Request $request) {
@@ -73,16 +101,16 @@ class JwtAuthController extends Controller {
 		try {
 			// verify the credentials and create a token for the user
 			if (! $token = JWTAuth::attempt($credentials)) {
-				return response()->json(['error'=>'invalid_credentials']);
+				return response()->json(['error'=>'invalid_credentials'], 401);
 			}
 		} catch (JWTException $e) {
 			// something went wrong
-			return response()->json(['error'=>'could_not_create_token']);
+			return response()->json(['error'=>'could_not_create_token'], 500);
 		}
 		$user = Auth::User();
 		//make sure the user has verified their email
 		if ($user->account_status == ACCOUNT_STATUS_UNCONFIRMED) {
-			return response()->json(['error'=>'account_unconfirmed']);
+			return response()->json(['error'=>'account_unconfirmed'], 401);
 		}
 
 		// if no errors are encountered we can return a JWT
@@ -92,7 +120,7 @@ class JwtAuthController extends Controller {
 	public function confirm(Request $request) {
 		if (!$request->has('c') || strlen($request->input('c')) != EMAIL_CONFIRMATION_LENGTH) {
 			if ($request->has('app')) {
-				return response()->json(['error'=>'invalid_code']);
+				return response()->json(['error'=>'invalid_code'], 400);
 			}
 			else {
 				return "Invalid Code";
@@ -102,7 +130,7 @@ class JwtAuthController extends Controller {
 		$user = User::whereEmailConfirmationCode($request->input('c'))->first();
 		if (!$user || $user->account_status != ACCOUNT_STATUS_UNCONFIRMED) {
 			if ($request->has('app')) {
-				return response()->json(['error'=>'invalid_code']);
+				return response()->json(['error'=>'invalid_code'], 400);
 			}
 			else {
 				return "Invalid Code";
@@ -114,7 +142,7 @@ class JwtAuthController extends Controller {
 
 		if (!$user->save()) {
 			if ($request->has('app')) {
-				return response()->json(['error'=>'db_error']);
+				return response()->json(['error'=>'db_error'], 500);
 			}
 			else {
 				return "Database Error, please try again.";
