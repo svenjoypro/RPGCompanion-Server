@@ -9,6 +9,8 @@ use App\Riddle;
 use App\RiddleVote;
 use DB;
 use Auth;
+use JWTAuth;
+use Tymon\JWTAuth\Exceptions\JWTException;
 
 class RiddleController extends Controller {
 	public function getriddles(Request $request) {
@@ -68,15 +70,20 @@ class RiddleController extends Controller {
 
 		$riddle->upvotes = DB::table('riddle_votes')->where('riddle_id', $riddle_id)->where('vote', 1)->count();
 		$riddle->downvotes = DB::table('riddle_votes')->where('riddle_id', $riddle_id)->where('vote', 0)->count();
-
-		if ($user = Auth::user()) {
-			$r = DB::table('riddle_votes')->select('vote')->where('riddle_id', $riddle_id)->where('user_id', $user->id)->first();
-			$riddle->voted=$r->vote;
+		
+		//Check if user is logged in, if so check if they've voted
+		try { 
+			$user = JWTAuth::toUser(JWTAuth::getToken());
+			if ($user) {
+				$r = DB::table('riddle_votes')->select('vote')->where('riddle_id', $riddle_id)->where('user_id', $user->id)->first();
+				if ($r) { $riddle->voted=$r->vote; }
+				else { $riddle->voted=-1; }
+			}
+			else { $riddle->voted=-1; }
 		}
-		else {
+		catch(JWTException $e) {
 			$riddle->voted=-1;
 		}
-	
 
 		$comments = DB::table('riddle_comments')
 			->join('users', 'riddle_comments.user_id', '=', 'users.id')

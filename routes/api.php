@@ -13,7 +13,7 @@ use Illuminate\Http\Request;
 |
 */
 
-Route::get('webalert', 						'MainController@getWebalert');
+Route::get('release-notes',					'MainController@getReleaseNotes');
 
 Route::get('hooks', 						'HookController@getHooks');
 Route::get('hooks/{id}', 					'HookController@getHookDetails');

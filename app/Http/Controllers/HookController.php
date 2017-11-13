@@ -9,6 +9,8 @@ use App\Hook;
 use App\HookVote;
 use DB;
 use Auth;
+use JWTAuth;
+use Tymon\JWTAuth\Exceptions\JWTException;
 
 class HookController extends Controller {
 	public function getHooks(Request $request) {
@@ -45,14 +47,20 @@ class HookController extends Controller {
 		$hook->upvotes = DB::table('hook_votes')->where('hook_id', $hook_id)->where('vote', 1)->count();
 		$hook->downvotes = DB::table('hook_votes')->where('hook_id', $hook_id)->where('vote', 0)->count();
 
-		if ($user = Auth::user()) {
-			$h = DB::table('hook_votes')->select('vote')->where('hook_id', $hook_id)->where('user_id', $user->id)->first();
-			$hook->voted=$h->vote;
+
+		//Check if user is logged in, if so check if they've voted
+		try { 
+			$user = JWTAuth::toUser(JWTAuth::getToken());
+			if ($user) {
+				$h = DB::table('hook_votes')->select('vote')->where('hook_id', $hook_id)->where('user_id', $user->id)->first();
+				if ($h) { $hook->voted=$h->vote; }
+				else { $hook->voted=-1; }
+			}
+			else { $hook->voted=-1; }
 		}
-		else {
+		catch(JWTException $e) {
 			$hook->voted=-1;
 		}
-	
 
 		$comments = DB::table('hook_comments')
 			->join('users', 'hook_comments.user_id', '=', 'users.id')

@@ -28,6 +28,10 @@ class JwtAuthController extends Controller {
 			return response()->json(['error'=>$validator->errors()->all()], 400);
 		}
 
+		if ($userData['username'] == "admin" || $userData['username'] == "administrator") {
+			return response()->json(['error'=>'invalid_parameters'], 400);
+		}
+
 		// Hash the user's password
 		$userData['password'] = Hash::make($userData['password']);
 

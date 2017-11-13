@@ -14,58 +14,11 @@ use Auth;
 
 class MainController extends Controller {
 
-	public function getWebalert(Request $request) {
-		$o['msg']="Update: 10/30/17 Happy Halloween! \nRiddles Improved - You shouldn't get any repeats anymore (until you leave the screen then come back). Also it shouldn't crash anymore when you click on a riddle (though not much happens when you click on one yet)";
+	public function getReleaseNotes(Request $request) {
+		$o['msg']="Update: 11/12/17 Release Notes \n\nYou can now create an account, which requires a username and an email address which must be confirmed.\n\nWith an account you can submit your own riddles and plot hooks as well as vote on other user's submissions.\n\nThere is no way yet to view all of your submissions, but that will be coming soon; as will sorting - there will probably be sort by date and sort by number of votes as well as the current randomize.\n\nWe've reached 1000 downloads, so thanks to all of you for the encouragement to keep with this.";
 		return response()->json($o);
 	}
-	/*
-	public function getRiddles(Request $request) {
-		if ($request->has('ids')) {
-			$riddles = DB::table('riddles')->select('id', 'riddle', 'user_id', 'answer', 'created_at')->whereIn('id', $request->input('ids'))->get();
-		}
-		else if ($request->has('random')) {
-			$qty=5;
-			if ($request->has('qty')) {
-				$qty = intval($request->input('qty'));
-			}
-			$output['total'] = DB::table('riddles')->count();
-			$riddles = DB::table('riddles')->select('id', 'riddle', 'user_id', 'answer', 'created_at')->take($qty)->inRandomOrder()->get();
-		}
-		else if ($request->has('sort')) {
-			//todo
-		}
-
-		foreach ($riddles as $riddle) {
-			$riddle->upvotes = DB::table('riddle_votes')->where('riddle_id', $riddle->id)->where('vote', '1')->count();
-			$riddle->downvotes = DB::table('riddle_votes')->where('riddle_id', $riddle->id)->where('vote', '0')->count();
-			
-			if ($riddle->voted = DB::table('riddle_votes')->select('vote')->where('riddle_id', $riddle->id)->where('user_id', '0')->first()) {}
-			else { $riddle->voted = -1; }
-		}
-		$output['riddles']=$riddles;
-		return response()->json($output);
-	}
-
-	public function getRiddleDetails(Request $request, $id) {
-		$riddle_id = $id;
-		$riddle = DB::table('riddles')
-		->join('users', 'riddles.user_id', '=', 'users.id')
-			->select('riddles.*', 'users.username')
-			->first();
-
-		$comments = DB::table('riddle_comments')
-			->join('users', 'riddle_comments.user_id', '=', 'users.id')
-			->select('riddle_comments.*', 'users.username')
-			->where('riddle_comments.riddle_id', $riddle_id)
-			->take(20)->get();
-
-		$output['riddle']=$riddle;
-		$output['comments']=$comments;
-		
-		return response()->json($output);
-	}
-	*/
-
+	
 	public function vote(Request $request) {
 		//-1=didn't vote, 0=downvoted, 1=upvoted
 		if (!$request->has('type') || !$request->has('vote') || !is_numeric($request->input('vote')) || !$request->has('id') || !is_numeric($request->input('id'))) {
@@ -132,38 +85,4 @@ class MainController extends Controller {
 		if ($insert->save()) { return response()->json(['success'=>'vote_saved']); }
 		else { return response()->json(['error'=>'db_error'], 500); }
 	}
-
-	public function getPuzzles(Request $request) {
-		$puzzles = DB::table('puzzles')->select('id', 'puzzle', 'user_id', 'answer', 'created_at')->take(5)->inRandomOrder()->get();
-
-		foreach ($puzzles as $puzzle) {
-			$puzzle->upvotes = DB::table('puzzle_votes')->where('puzzle_id', $puzzle->id)->where('vote', '1')->count();
-			$puzzle->downvotes = DB::table('puzzle_votes')->where('puzzle_id', $puzzle->id)->where('vote', '0')->count();
-			
-			if ($puzzle->voted = DB::table('puzzle_votes')->select('vote')->where('puzzle_id', $puzzle->id)->where('user_id', '0')->first()) {}
-			else { $puzzle->voted = -1; }
-		}
-
-		return response()->json($puzzles);
-	}
-
-	public function getPuzzleDetails(Request $request, $id) {
-		$puzzle_id = $id;
-		$puzzle = DB::table('puzzles')
-		->join('users', 'puzzles.user_id', '=', 'users.id')
-			->select('puzzles.*', 'users.username')
-			->first();
-
-		$comments = DB::table('puzzle_comments')
-			->join('users', 'puzzle_comments.user_id', '=', 'users.id')
-			->select('puzzle_comments.*', 'users.username')
-			->where('puzzle_comments.puzzle_id', $puzzle_id)
-			->take(20)->get();
-
-		$output['puzzle']=$puzzle;
-		$output['comments']=$comments;
-		
-		return response()->json($output);
-	}
-
 }
