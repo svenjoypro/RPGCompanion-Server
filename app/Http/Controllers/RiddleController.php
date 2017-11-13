@@ -19,7 +19,7 @@ class RiddleController extends Controller {
 			$riddles = DB::table('riddles')
 				->join('users', 'riddles.user_id', '=', 'users.id')
 				->select('riddles.id', 'riddles.answer', 'riddles.user_id', 'riddles.riddle', 'riddles.created_at', 'riddles.updated_at', 'users.username')
-				->whereIn('id', $request->input('ids'))
+				->whereIn('riddles.id', $request->input('ids'))
 				->get();
 		}
 		else if ($request->has('random')) {
