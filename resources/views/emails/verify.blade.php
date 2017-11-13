@@ -18,7 +18,7 @@
 	</div>
 	<p>If the above button doesn't work please visit:
 		<br>
-		<a href="{{url('api/confirm-email?c=' . $confirmation_code)}}">{{url('confirm-email?c=' . $confirmation_code)}}</a>
+		<a href="{{url('api/confirm-email?c=' . $confirmation_code)}}">{{url('api/confirm-email?c=' . $confirmation_code)}}</a>
 	</p>
 	<p>Thank you for creating an account.</p>
 </body></html>
