@@ -93,6 +93,16 @@ class JwtAuthController extends Controller {
 		return response()->json(['success'=>'email_sent']);
 	}
 
+	public function resetPassword(Request $request) {
+		if (!$request->has('email')) {
+			return response()->json(['error'=>'missing_data'], 400);
+		}
+
+		$email = $request->input('email');
+
+		
+	}
+
 	public function login(Request $request) {
 		$credentials = $request->only('email', 'password');
 
