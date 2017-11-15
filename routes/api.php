@@ -31,7 +31,8 @@ Route::post('login', 						'JWTAuthController@login');
 Route::post('register', 					'JWTAuthController@register');
 Route::get('confirm-email', 				'JWTAuthController@confirm');
 Route::post('resend-email', 				'JWTAuthController@resendEmail');
-Route::post('reset-password', 				'JWTAuthController@resetPassword');
+Route::post('create-password-reset', 		'JWTAuthController@createPasswordReset');
+Route::get('reset-password', 				'JWTAuthController@resetPassword');
 
 Route::group(['middleware' => 'jwt.auth'], function () {
 

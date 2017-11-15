@@ -11,6 +11,7 @@ use Tymon\JWTAuth\Exceptions\JWTException;
 use App\User;
 use Hash;
 use Mail;
+use App\PasswordReset;
 
 require_once(app_path().'/constants.php');
 
@@ -93,14 +94,50 @@ class JwtAuthController extends Controller {
 		return response()->json(['success'=>'email_sent']);
 	}
 
-	public function resetPassword(Request $request) {
+	public function createPasswordReset(Request $request) {
 		if (!$request->has('email')) {
 			return response()->json(['error'=>'missing_data'], 400);
 		}
 
 		$email = $request->input('email');
+		$rand = str_random(EMAIL_CONFIRMATION_LENGTH);
 
-		
+		if (User::where('email', $email)->count() == 0) { return response()->json(['error'=>'invalid_email'], 400); }
+
+		$pr = PasswordReset::firstOrNew(array('email' => $email));
+		$pr->token = $rand;
+		if ($pr->save()) {
+			try {
+				Mail::send('emails.reset', array('token' => $rand, 'email' => $email), function($message) use($email) {
+					$message->to($email, $email)
+						->subject('Reset your password');
+				});
+				return response->json(['success'=>'email_sent']);
+			}
+			catch(Exception $e) {
+				$pr->delete();
+				return response()->json(['error'=>'could_not_create_reset'], 500);
+			}
+		}
+		return response()->json(['error'=>'db_error'], 500);
+	}
+
+	public function resetPassword(Request $request) {
+		if (!$request->has('t') || !$request->has('password')) { return response()->json(['error'=>'missing_data'], 400); }
+
+		$pr = PasswordReset::where('token', $request->input('t'))->first();
+		if (!$pr) { return response()->json(['error'=>'invalid_email'], 400); }
+		if ($pr->token != $request->input('t')) { return response()->json(['error'=>'invalid_token'], 400); }
+
+		$user = User::where('email', $pr->email)->first();
+		if (!$user) { response()->json(['error'=>'invalid_email'], 400); }
+
+		$user->password = Hash::make($request->input('password'));
+		if ($user->save()) {
+			$pr->delete();
+			return response()->json(['success'=>'password_updated_successfully']);
+		}
+		return response()->json(['error'=>'db_error'], 500);
 	}
 
 	public function login(Request $request) {
