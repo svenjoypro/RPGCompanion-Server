@@ -112,7 +112,7 @@ class JwtAuthController extends Controller {
 					$message->to($email, $email)
 						->subject('Reset your password');
 				});
-				return response->json(['success'=>'email_sent']);
+				return response()->json(['success'=>'email_sent']);
 			}
 			catch(Exception $e) {
 				$pr->delete();
