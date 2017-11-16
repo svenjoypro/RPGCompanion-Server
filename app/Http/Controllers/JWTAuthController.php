@@ -102,6 +102,11 @@ class JwtAuthController extends Controller {
 		$email = $request->input('email');
 		$rand = str_random(EMAIL_CONFIRMATION_LENGTH);
 
+		//Make sure token is unique
+		while (PasswordReset::where('token', $rand)->count()!=0) {
+			$rand = str_random(EMAIL_CONFIRMATION_LENGTH);			
+		}
+
 		if (User::where('email', $email)->count() == 0) { return response()->json(['error'=>'invalid_email'], 400); }
 
 		$pr = PasswordReset::firstOrNew(array('email' => $email));
@@ -122,12 +127,17 @@ class JwtAuthController extends Controller {
 		return response()->json(['error'=>'db_error'], 500);
 	}
 
+	public function showResetPassword(Request $request) {
+		//TODO create basic form with two inputs, post to self with hidden token
+		return 'Please access this link from the app.';
+	}
+
 	public function resetPassword(Request $request) {
 		if (!$request->has('t') || !$request->has('password')) { return response()->json(['error'=>'missing_data'], 400); }
 
 		$pr = PasswordReset::where('token', $request->input('t'))->first();
 		if (!$pr) { return response()->json(['error'=>'invalid_email'], 400); }
-		if ($pr->token != $request->input('t')) { return response()->json(['error'=>'invalid_token'], 400); }
+		if ($pr->token != $request->input('t')) { return response()->json(['error'=>'invalid_reset_token'], 400); }
 
 		$user = User::where('email', $pr->email)->first();
 		if (!$user) { response()->json(['error'=>'invalid_email'], 400); }
