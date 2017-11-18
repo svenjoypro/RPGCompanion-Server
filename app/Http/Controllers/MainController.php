@@ -15,7 +15,7 @@ use Auth;
 class MainController extends Controller {
 
 	public function getReleaseNotes(Request $request) {
-		$o['msg']="Update: 11/12/17 Release Notes \n\nYou can now create an account, which requires a username and an email address which must be confirmed.\n\nWith an account you can submit your own riddles and plot hooks as well as vote on other user's submissions.\n\nThere is no way yet to view all of your submissions, but that will be coming soon; as will sorting - there will probably be sort by date and sort by number of votes as well as the current randomize.\n\nWe've reached 1000 downloads, so thanks to all of you for the encouragement to keep with this.";
+		$o['msg']="Update: 11/16/17 Release Notes \n\nPassword resets now implemented from the login page (clicking the forgot your password link)\n\nContact the developer link put into the menu\n\nAdded 4 new d100 lists: Interesting Books, Unique Shops and Stores, Holy Pilgrimage Quests, and Dungeon Lever Consequences\n\n\n\nUpdate: 11/12/17 Release Notes \n\nYou can now create an account, which requires a username and an email address which must be confirmed.\n\nWith an account you can submit your own riddles and plot hooks as well as vote on other user's submissions.\n\nThere is no way yet to view all of your submissions, but that will be coming soon; as will sorting - there will probably be sort by date and sort by number of votes as well as the current randomize.\n\nWe've reached 1000 downloads, so thanks to all of you for the encouragement to keep with this.";
 		return response()->json($o);
 	}
 	
