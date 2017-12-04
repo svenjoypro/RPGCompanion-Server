@@ -18,16 +18,23 @@ require_once(app_path().'/constants.php');
 class JwtAuthController extends Controller {
 
 	public function register(Request $request) {
+		if (!$request->has('password') || !$request->has('username') || !$request->has('email')) {
+            return response()->json(['error'=>'missing_data'], 400);
+        }
+
 		// limit userData to only the essential columns
 		$userData = $request->only(User::$registrationFields);
 
-		// create validator with validation rules found in User
-		$validator = Validator::make($userData, User::$registrationValidationRules);
-
-		// check inputs against validator
-		if($validator->fails()) {
-			return response()->json(['error'=>$validator->errors()->all()], 400);
-		}
+		//Validation
+        if (strlen($userData['password']) < 6) {
+            return response()->json(['error'=>'invalid_password'], 400);
+        }
+        if (User::where('username', $userData['username'])) {
+            return response()->json(['error'=>'username_in_use'], 400);
+        }
+        if (User::where('email', $userData['email'])) {
+            return response()->json(['error'=>'email_in_use'], 400);
+        }
 
 		if ($userData['username'] == "admin" || $userData['username'] == "administrator") {
 			return response()->json(['error'=>'invalid_parameters'], 400);
@@ -39,31 +46,32 @@ class JwtAuthController extends Controller {
 		// Create random string for email confirmation
         $userData['email_confirmation_code'] = str_random(EMAIL_CONFIRMATION_LENGTH);
 
-		// unguard and reguard are probably unecessary
-		// they remove the mass-assignment restriction of User::$fillable
-		// User::unguard();
 		$user = User::create($userData);
-		// User::reguard();
 
 		// make sure a new entry was created in the db
-		if(!$user->id) {
-			return response()->json(['error'=>'Could not create user'], 500);
+		if (!$user->id) {
+			return response()->json(['error'=>'db_error'], 500);
 		}
 
+		//TODO This takes a few seconds to complete and the user is left waiting. 
+        //TODO We can leave it as is, they have to wait for the email anyway...
+        //TODO Or we can implement Laravel Queueing. I vote we leave it as is.
 		$email=$request->input('email');
-		
 		try {
-			Mail::send('emails.verify', array('confirmation_code' => $userData['email_confirmation_code'], 'email' => $email), function($message) use($email) {
-				$message->to($email, $email)
-					->subject('Verify your email address');
-			});
+			Mail::send('emails.verify', array('confirmation_code' => $userData['email_confirmation_code'], 'email' => $email), 
+				function($message) use($email) {
+					$message
+						->to($email, $email)
+						->subject('Verify your email address');
+				}
+			);
 		}
 		catch(Exception $e) {
 			$user->delete();
-			return response()->json(['error'=>'could_not_create_user'], 500);
+			return response()->json(['error'=>'unable_to_send_email'], 500);
 		}
 
-		return response()->json(['success'=>'Confirmation Email Sent']);
+		return response()->json(['success'=>'confirmation_sent']);
 	}
 
 	public function resendEmail(Request $request) {
@@ -75,21 +83,27 @@ class JwtAuthController extends Controller {
 
 		$user = User::where('email', $email)->first();
 		if (!$user) {
-			return response()->json(['error'=>'invalid_email']);
+			return response()->json(['error'=>'invalid_email'], 400);
+		}
+		if ($user->account_status != ACCOUNT_STATUS_UNCONFIRMED) {
+			return response()->json(['error'=>'account_already_confirmed'], 400);
 		}
 		try {
 			if (is_null($user->email_confirmation_code) || strlen($user->email_confirmation_code) != EMAIL_CONFIRMATION_LENGTH) {
 				$user->email_confirmation_code = str_random(EMAIL_CONFIRMATION_LENGTH);
 				$user->save();
 			}
-			Mail::send('emails.verify', array('confirmation_code' => $user->email_confirmation_code, 'email' => $email), function($message) use($email) {
-				$message->to($email, $email)
-					->subject('Verify your email address');
-			});
+			Mail::send('emails.verify', array('confirmation_code' => $user->email_confirmation_code, 'email' => $email), 
+				function($message) use($email) {
+					$message
+						->to($email, $email)
+						->subject('Verify your email address');
+				}
+			);
 		}
 		catch(Exception $e) {
 			$user->delete();
-			return response()->json(['error'=>'could_not_create_user'], 500);
+			return response()->json(['error'=>'could_not_send_email'], 500);
 		}
 		return response()->json(['success'=>'email_sent']);
 	}
