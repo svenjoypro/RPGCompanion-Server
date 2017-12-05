@@ -21,6 +21,11 @@ Route::get('hooks/{id}', 					'HookController@getHookDetails');
 Route::get('riddles', 						'RiddleController@getRiddles');
 Route::get('riddles/{id}', 					'RiddleController@getRiddleDetails');
 
+Route::get('maps', 							'MapController@getMaps');
+Route::get('maps/get-environments', 		'MapController@getEnvironments');
+Route::get('maps/{id}', 					'MapController@getMapDetails');
+
+
 /*
 Route::middleware('auth:api')->get('/user', function (Request $request) {
 	return $request->user();
