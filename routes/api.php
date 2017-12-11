@@ -26,6 +26,9 @@ Route::get('maps/get-environments', 		'MapController@getEnvironments');
 Route::get('maps/{id}', 					'MapController@getMapDetails');
 
 
+Route::post('maps/new', 							'MapController@submitMap');
+
+
 /*
 Route::middleware('auth:api')->get('/user', function (Request $request) {
 	return $request->user();

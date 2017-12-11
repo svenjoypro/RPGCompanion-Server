@@ -5,12 +5,14 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\User;
-use App\Hook;
-use App\HookVote;
+use App\Map;
+use App\MapVote;
 use DB;
 use Auth;
 use JWTAuth;
+use Image;
 use Tymon\JWTAuth\Exceptions\JWTException;
+use Intervention\Image\Exception\NotReadableException;
 
 //require_once(app_path().'/constants.php');
 
@@ -94,17 +96,32 @@ class MapController extends Controller {
 	public function submitMap(Request $request) {
 		$user = Auth::user();
 
-		if (!$request->has('map_body') || !$request->has('map_title')) {
+		if (!$request->has('desc') || !$request->has('title') || !$request->has('link') || !$request->has('img')) {
 			return response()->json(['error'=>'invalid_parameters'], 400);
 		}
+
 		$map = new Map;
-		$map->user_id=$user->id;
-		$map->title=$request->input('map_title');
-		$map->description=$request->input('map_body');
+		$map->user_id=1;//******************$user->id;
+		$map->link=$request->input('link');
+		$map->title=$request->input('title');
+		$map->description=$request->input('desc');
 
 		if ($map->save()) {
+
+			try {
+				//TODO do this before creating Map?
+				//create img
+				//TODO make sure maps folder exists before using
+				$image = Image::make($request->input('img'));
+				$image->fit(100, 100)->save(public_path('maps/'. $map->id .'.jpg'));
+			}
+			catch(NotReadableException $e) {
+				$map->delete();
+				return response()->json(['error'=>'img_error'], 400);
+			}
+
 			$vote = new MapVote;
-			$vote->user_id=$user->id;
+			$vote->user_id=1;//************$user->id;
 			$vote->map_id=$map->id;
 			$vote->vote=1;
 			$vote->save();
