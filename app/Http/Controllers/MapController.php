@@ -21,13 +21,23 @@ class MapController extends Controller {
 	private $environments = ['Abyss/Nine Hells','Air/Sky Ship','Cave','City/Urban','Desert','Dungeon','Extraplanar','Feywild','Forest','House/Mansion','Island','Jungle','Megadungeon','Mountain','Other','Ruins','Sewer','Shadowfell','Ship','Stronghold/Castle/Tower','Swamp','Temple','Town/Village','Underdark','Underwater','Wilderness'];
 
 	public function getMaps(Request $request) {
-		if (!$request->has('topics')) {
+		if (!$request->has('envs')) {
 			return response()->json(['error'=>'missing_data'], 400);
 		}
+		$envs = explode(",", $request->input('envs'));
+
+		$ids = DB::table('map_environments')
+				->distinct()
+				->whereIn('environment', $envs)
+				->take(10)
+				->inRandomOrder()
+				->pluck('map_id');
+		
 		$maps = DB::table('maps')
 				->join('users', 'maps.user_id', '=', 'users.id')
 				->select('maps.id', 'maps.user_id', 'maps.link', 'maps.title', 'maps.description', 'maps.created_at', 'maps.updated_at', 'users.username')
-				->take(10)->inRandomOrder()->get();
+				->whereIn('maps.id', $ids)
+				->get();
 	
 		$user = Auth::user();
 
@@ -43,7 +53,8 @@ class MapController extends Controller {
 			}
 			else { $map->voted=-1; }
 
-			$map->environments = DB::table('map_environments')->where('map_id', $map->id)->select('environment')->get();
+			//TODO necessary?
+			//$map->environments = DB::table('map_environments')->where('map_id', $map->id)->select('environment')->pluck('environment');
 		}
 
 		return response()->json($maps);
@@ -87,7 +98,7 @@ class MapController extends Controller {
 			->take(20)->get();
 
 		$output['map']=$map;
-		$output['environments']=$environments;
+		$output['environments']=$this->environments;
 		$output['comments']=$comments;
 		
 		return response()->json($output);
@@ -96,12 +107,24 @@ class MapController extends Controller {
 	public function submitMap(Request $request) {
 		$user = Auth::user();
 
-		if (!$request->has('desc') || !$request->has('title') || !$request->has('link') || !$request->has('img')) {
-			return response()->json(['error'=>'invalid_parameters'], 400);
+		if (!$request->has('desc') || !$request->has('title') || !$request->has('link') || !$request->has('img') || !$request->has('envs')) {
+			return response()->json(['error'=>'invalid_parameters1'], 400);
+		}
+
+		$envs = explode(",", $request->input('envs'));
+		if (count($envs) < 1) {
+			return response()->json(['error'=>'invalid_parameters2'], 400);
+		}
+
+		foreach ($envs as $env) {
+			$env = intval($env);
+			if ($env < 0 || $env >= count($this->environments)) {
+				return response()->json(['error'=>'invalid_parameters3'], 400);
+			}
 		}
 
 		$map = new Map;
-		$map->user_id=1;//******************$user->id;
+		$map->user_id=$user->id;
 		$map->link=$request->input('link');
 		$map->title=$request->input('title');
 		$map->description=$request->input('desc');
@@ -115,13 +138,21 @@ class MapController extends Controller {
 				$image = Image::make($request->input('img'));
 				$image->fit(100, 100)->save(public_path('maps/'. $map->id .'.jpg'));
 			}
-			catch(NotReadableException $e) {
+			catch(Exception $e) {
 				$map->delete();
 				return response()->json(['error'=>'img_error'], 400);
 			}
 
+			$env_ins = [];
+			foreach ($envs as $env) {
+				$env = intval($env);
+				array_push($env_ins, ["map_id"=>$map->id, "environment"=>$env]);
+			}
+
+			DB::table('map_environments')->insert($env_ins);				
+
 			$vote = new MapVote;
-			$vote->user_id=1;//************$user->id;
+			$vote->user_id=$user->id;
 			$vote->map_id=$map->id;
 			$vote->vote=1;
 			$vote->save();
@@ -130,6 +161,7 @@ class MapController extends Controller {
 		}
 		return response()->json(['error'=>'db_error'], 500);
 	}
+
 
 	public function getEnvironments(Request $request) {
 		return response()->json($this->environments);

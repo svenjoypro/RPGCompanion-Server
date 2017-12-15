@@ -74,6 +74,16 @@ class MainController extends Controller {
 				}
 				$insert = new RiddleCommentVote;
 				break;
+			case "map":
+				$prev = MapVote::where('user_id', $uid)->where('map_id', $id)->first();
+				if ($prev) {
+					if ($prev->vote == $vote) { return response()->json(['success'=>'vote_unchanged']); }
+					$prev->vote = $vote;
+					if ($prev->save()) { return response()->json(['success'=>'vote_updated']); }
+					else { return response()->json(['error'=>'invalid_parameters'], 400); }
+				}
+				$insert = new MapVote;
+				break;
 			default:
 				return response()->json(['error'=>'invalid_parameters'], 400);
 		}

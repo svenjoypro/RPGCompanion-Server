@@ -21,12 +21,13 @@ Route::get('hooks/{id}', 					'HookController@getHookDetails');
 Route::get('riddles', 						'RiddleController@getRiddles');
 Route::get('riddles/{id}', 					'RiddleController@getRiddleDetails');
 
-Route::get('maps', 							'MapController@getMaps');
+Route::post('maps', 						'MapController@getMaps');
 Route::get('maps/get-environments', 		'MapController@getEnvironments');
+
 Route::get('maps/{id}', 					'MapController@getMapDetails');
 
 
-Route::post('maps/new', 							'MapController@submitMap');
+
 
 
 /*
@@ -50,9 +51,9 @@ Route::group(['middleware' => 'jwt.auth'], function () {
 
 	Route::post('hooks/new', 				'HookController@submitHook');
 	Route::post('riddles/new', 				'RiddleController@submitRiddle');
+	Route::post('maps/new',					'MapController@submitMap');
 
 	Route::post('vote',						'MainController@vote');
-
 
 	//Route::post('comments/post', 			'CommentController@postComment');
 });
