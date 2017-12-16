@@ -29,10 +29,10 @@ class JwtAuthController extends Controller {
         if (strlen($userData['password']) < 6) {
             return response()->json(['error'=>'invalid_password'], 400);
         }
-        if (User::where('username', $userData['username'])) {
+        if (User::where('username', $userData['username'])->exists()) {
             return response()->json(['error'=>'username_in_use'], 400);
         }
-        if (User::where('email', $userData['email'])) {
+        if (User::where('email', $userData['email'])->exists()) {
             return response()->json(['error'=>'email_in_use'], 400);
         }
 
