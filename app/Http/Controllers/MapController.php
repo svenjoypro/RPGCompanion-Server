@@ -21,16 +21,20 @@ class MapController extends Controller {
 	private $environments = ['Abyss/Nine Hells','Air/Sky Ship','Cave','City/Urban','Desert','Dungeon','Extraplanar','Feywild','Forest','House/Mansion','Island','Jungle','Megadungeon','Mountain','Other','Ruins','Sewer','Shadowfell','Ship','Stronghold/Castle/Tower','Swamp','Temple','Town/Village','Underdark','Underwater','Wilderness'];
 
 	public function getMaps(Request $request) {
-		if (!$request->has('envs')) {
+		if (!$request->has('envs') || !$request->has('seed') || !$request->has('page')) {
 			return response()->json(['error'=>'missing_data'], 400);
 		}
 		$envs = explode(",", $request->input('envs'));
+
+		$seed = $request->input('seed');
+		$page = intval($request->input('page'));
 
 		$ids = DB::table('map_environments')
 				->distinct()
 				->whereIn('environment', $envs)
 				->take(10)
-				->inRandomOrder()
+				->inRandomOrder($seed)
+				->skip($page * 10)
 				->pluck('map_id');
 		
 		$maps = DB::table('maps')
