@@ -12,6 +12,7 @@ use App\User;
 use Hash;
 use Mail;
 use App\PasswordReset;
+use DB;
 
 require_once(app_path().'/constants.php');
 
@@ -231,6 +232,56 @@ class JwtAuthController extends Controller {
 		else {
 			return "Account verified successfully. You may now log in.";
 		}
+	}
+
+	public function getAccountInfo(Request $request) {
+		$user = Auth::User();
+
+		$o['username']=$user->username;
+		$o['email']=$user->email;
+		$o['created_at']=$user->created_at;
+
+		$maps = DB::table('maps')
+				->where('user_id', $user->id)
+				->pluck('id');
+		$o['map_ups'] = DB::table('map_votes')
+				->where('vote', 1)
+				->whereIn('map_id', $maps)
+				->count();
+		$o['map_downs'] = DB::table('map_votes')
+				->where('vote', 0)
+				->whereIn('map_id', $maps)
+				->count();
+
+		$riddles = DB::table('riddles')
+				->where('user_id', $user->id)
+				->pluck('id');
+		$o['riddle_ups'] = DB::table('riddle_votes')
+				->where('vote', 1)
+				->whereIn('riddle_id', $riddles)
+				->count();
+		$o['riddle_downs'] = DB::table('riddle_votes')
+				->where('vote', 0)
+				->whereIn('riddle_id', $riddles)
+				->count();
+
+		$hooks = DB::table('hooks')
+				->where('user_id', $user->id)
+				->pluck('id');
+		$o['hook_ups'] = DB::table('hook_votes')
+				->where('vote', 1)
+				->whereIn('hook_id', $hooks)
+				->count();
+		$o['hook_downs'] = DB::table('hook_votes')
+				->where('vote', 0)
+				->whereIn('hook_id', $hooks)
+				->count();
+
+		$o['maps']=count($maps);
+		$o['riddles']=count($riddles);
+		$o['hooks']=count($hooks);
+
+		return response()->json($o);
 	}
 
 	public function checkToken(Request $request) {

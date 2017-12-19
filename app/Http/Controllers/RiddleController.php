@@ -14,6 +14,7 @@ use Tymon\JWTAuth\Exceptions\JWTException;
 
 class RiddleController extends Controller {
 	public function getriddles(Request $request) {
+		//TODO DEPRECATED
 		$user = Auth::user();
 		if ($request->has('ids')) {
 			$riddles = DB::table('riddles')
@@ -54,6 +55,47 @@ class RiddleController extends Controller {
 
 		$output['riddles']=$riddles;
 		return response()->json($output);
+	}
+
+	public function getriddles2(Request $request) {
+		if (!$request->has('seed') || !$request->has('page')) {
+			return response()->json(['error'=>'missing_data'], 400);
+		}
+
+		$seed = $request->input('seed');
+		$page = intval($request->input('page'));
+		$qty=10;
+
+		$user = Auth::user();
+
+		$riddles = DB::table('riddles')
+				->join('users', 'riddles.user_id', '=', 'users.id')
+				->select('riddles.id', 'riddles.answer', 'riddles.user_id', 'riddles.riddle', 'riddles.created_at', 'riddles.updated_at', 'users.username')
+				->take($qty)
+				->inRandomOrder($seed)
+				->skip($page * $qty)
+				->get();
+		
+		/*	
+		if ($request->has('sort')) {
+			//todo
+		}
+		*/
+
+		foreach ($riddles as $riddle) {
+			//TODO this will become taxing as popularity increases, consider adding 'upvotes' and 'donwvotes'
+			//columns to the riddles table which are updated every x minutes or some interval (maybe instantly with each vote)
+			$riddle->upvotes = DB::table('riddle_votes')->where('riddle_id', $riddle->id)->where('vote', 1)->count();
+			$riddle->downvotes = DB::table('riddle_votes')->where('riddle_id', $riddle->id)->where('vote', 0)->count();
+			
+			if ($user) {	
+				$r = DB::table('riddle_votes')->select('vote')->where('riddle_id', $id)->where('user_id', $user->id)->first();
+				$riddle->voted=$r->vote;
+			}
+			else { $riddle->voted=-1; }
+		}
+
+		return response()->json($riddles);
 	}
 
 	public function getRiddleDetails(Request $request, $id) {

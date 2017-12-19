@@ -14,7 +14,42 @@ use Tymon\JWTAuth\Exceptions\JWTException;
 
 class HookController extends Controller {
 	public function getHooks(Request $request) {
+		//TODO DEPRECATED
 		$hooks = DB::table('hooks')->join('users', 'hooks.user_id', '=', 'users.id')->select('hooks.id', 'hooks.title', 'hooks.user_id', 'hooks.description', 'hooks.created_at', 'hooks.updated_at', 'users.username')->take(10)->inRandomOrder()->get();
+		$user = Auth::user();
+		foreach ($hooks as $hook) {
+			//TODO this will become taxing as popularity increases, consider adding 'upvotes' and 'donwvotes'
+			//columns to the hooks table which are updated every x minutes or some interval (maybe instantly with each vote)
+			$hook->upvotes = DB::table('hook_votes')->where('hook_id', $hook->id)->where('vote', 1)->count();
+			$hook->downvotes = DB::table('hook_votes')->where('hook_id', $hook->id)->where('vote', 0)->count();
+			
+			if ($user) {	
+				$h = DB::table('hook_votes')->select('vote')->where('hook_id', $id)->where('user_id', $user->id)->first();
+				$hook->voted=$h->vote;
+			}
+			else { $hook->voted=-1; }
+		}
+
+		return response()->json($hooks);
+	}
+
+	public function getHooks2(Request $request) {
+		if (!$request->has('seed') || !$request->has('page')) {
+			return response()->json(['error'=>'missing_data'], 400);
+		}
+
+		$seed = $request->input('seed');
+		$page = intval($request->input('page'));
+		$qty=10;
+
+		$hooks = DB::table('hooks')
+				->join('users', 'hooks.user_id', '=', 'users.id')
+				->select('hooks.id', 'hooks.title', 'hooks.user_id', 'hooks.description', 'hooks.created_at', 'hooks.updated_at', 'users.username')
+				->take($qty)
+				->inRandomOrder($seed)
+				->skip($page * $qty)
+				->get();
+
 		$user = Auth::user();
 		foreach ($hooks as $hook) {
 			//TODO this will become taxing as popularity increases, consider adding 'upvotes' and 'donwvotes'

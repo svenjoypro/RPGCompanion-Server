@@ -15,10 +15,12 @@ use Illuminate\Http\Request;
 
 Route::get('release-notes',					'MainController@getReleaseNotes');
 
-Route::get('hooks', 						'HookController@getHooks');
+Route::get('hooks', 						'HookController@getHooks'); // DEPRECATED
+Route::post('hooks', 						'HookController@getHooks2');
 Route::get('hooks/{id}', 					'HookController@getHookDetails');
 
-Route::get('riddles', 						'RiddleController@getRiddles');
+Route::get('riddles', 						'RiddleController@getRiddles'); // DEPRECATED
+Route::post('riddles', 						'RiddleController@getRiddles2');
 Route::get('riddles/{id}', 					'RiddleController@getRiddleDetails');
 
 Route::post('maps', 						'MapController@getMaps');
@@ -56,6 +58,8 @@ Route::group(['middleware' => 'jwt.auth'], function () {
 	Route::post('vote',						'MainController@vote');
 
 	//Route::post('comments/post', 			'CommentController@postComment');
+
+	Route::get('admin/account',				'JWTAuthController@getAccountInfo');
 });
 
 

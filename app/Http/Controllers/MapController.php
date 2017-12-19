@@ -28,13 +28,14 @@ class MapController extends Controller {
 
 		$seed = $request->input('seed');
 		$page = intval($request->input('page'));
+		$qty=10;
 
 		$ids = DB::table('map_environments')
 				->distinct()
 				->whereIn('environment', $envs)
-				->take(10)
+				->take($qty)
 				->inRandomOrder($seed)
-				->skip($page * 10)
+				->skip($page * $qty)
 				->pluck('map_id');
 		
 		$maps = DB::table('maps')
