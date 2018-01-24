@@ -190,7 +190,7 @@ class JwtAuthController extends Controller {
 		}
 
 		// if no errors are encountered we can return a JWT
-		return response()->json(['jwt'=>$token]);
+		return response()->json(['jwt'=>$token, 'id'=>$user->id, 'username'=>$user->username, 'email'=>$user->email, 'account_status'=>$user->account_status]);
 	}
 
 	public function confirm(Request $request) {
