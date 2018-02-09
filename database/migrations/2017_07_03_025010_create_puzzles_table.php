@@ -17,8 +17,10 @@ class CreatePuzzlesTable extends Migration
             $table->increments('id');
             $table->integer('user_id')->unsigned();
             $table->string('title', 128);
-            $table->text('description')->nullable();
-            $table->string('link', 1024)->nullable();
+            $table->text('description');
+            $table->string('external_link', 1024);
+            $table->string('image_link', 1024);
+            $table->softDeletes();
             $table->timestamps();
         });
     }

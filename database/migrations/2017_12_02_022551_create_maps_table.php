@@ -19,6 +19,7 @@ class CreateMapsTable extends Migration
             $table->string('link', 2048);
             $table->string('title', 512);
             $table->string('description', 4096);
+            $table->softDeletes();
             $table->timestamps();
         });
     }

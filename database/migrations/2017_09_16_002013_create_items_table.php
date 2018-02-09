@@ -18,8 +18,9 @@ class CreateItemsTable extends Migration
             $table->integer('user_id')->unsigned();
             $table->string('title', 128);
             $table->text('description');
-            $table->tinyInteger('is_cursed')->unsigned();
-            $table->tinyInteger('grade')->unsigned();
+            $table->string('external_link', 1024);
+            $table->string('image_link', 1024);
+            $table->softDeletes();
             $table->timestamps();
         });
     }

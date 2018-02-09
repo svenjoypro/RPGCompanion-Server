@@ -19,6 +19,7 @@ class CreateRiddlesTable extends Migration
             $table->string('riddle', 2048);
             $table->string('answer', 512);
             $table->tinyInteger('difficulty')->unsigned()->default(0);
+            $table->softDeletes();
             $table->timestamps();
         });
     }
